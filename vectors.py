@@ -37,6 +37,11 @@ def add(v,w):
     X,Y = w
     return (x+X, y+Y)
 
+def sub(v,w):
+    x,y = v
+    X,Y = w
+    return (x-X, y-Y)
+
 
 def pnt2line(pnt, start, end):
     line_vec = vector(start, end)

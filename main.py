@@ -203,6 +203,9 @@ def drawHighlights(image, areas):
         draw.polygon((p_min, p_min_v, p_max, p_max_v, p_min), outline=tuple([255,0,255,128]))
 
 
+
+
+
 def main(filename):
     image_orig = Image.open(filename)
 #    image_orig.show()
@@ -235,6 +238,6 @@ def main(filename):
 
 
 if len(sys.argv) != 2:
-    print "Usage: " + sys.argv[0] + " <filename>"
+    print("Usage: " + sys.argv[0] + " <filename>")
 else:
     main(sys.argv[1])

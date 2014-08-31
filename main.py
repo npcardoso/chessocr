@@ -174,17 +174,15 @@ def colorAreas(image):
 
 
 
-def ignoreAreas(image, areas, area_limits, ratio_limits, color_ratio_limits):
+def ignoreAreas(image, areas, area_limits, ratio_limits):
     pix = image.load()
     white = tuple([255,255,255])
 
     ret = []
 
     for area in areas:
-        print (area.bg_prob)
         if inside([area.area], [[area_limits[0]], [area_limits[1]]]) and \
-           inside([area.ratio], [[ratio_limits[0]], [ratio_limits[1]]]) and \
-           inside([area.bg_prob], [[color_ratio_limits[0]], [color_ratio_limits[1]]]):
+           inside([area.ratio], [[ratio_limits[0]], [ratio_limits[1]]]):
             ret.append(area);
 
     return ret
@@ -229,8 +227,7 @@ def main(filename):
     areas = ignoreAreas(image,
                         areas,
                         [size_min, size_max],
-                        [0.5, 1],
-                        [0.1, 0.9])
+                        [0.5, 1])
     #    image.show()
     image = image_orig.copy().convert('RGBA')
     drawHighlights(image, areas)

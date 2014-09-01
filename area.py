@@ -38,10 +38,19 @@ class Area:
         h_bound = self.horizontal_boundaries
         v_bound = self.vertical_boundaries
 
-        pa = [h_bound[0],
-              v_bound[1],
-              h_bound[1],
-              v_bound[0]]
+        h_center = h_bound[0][0] + ((h_bound[1][0] - h_bound[0][0]) / 2)
+        print(h_center)
+        print(v_bound)
+        if v_bound[0][0] > h_center:
+            pa = [v_bound[1],
+                  h_bound[1],
+                  v_bound[0],
+                  h_bound[0]]
+        else:
+            pa = [h_bound[0],
+                  v_bound[1],
+                  h_bound[1],
+                  v_bound[0]]
 
         pb = [(0,0),
               (w, 0),

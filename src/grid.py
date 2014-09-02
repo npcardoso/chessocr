@@ -43,8 +43,19 @@ class Line:
     def isVertical(self, thresholdAngle=np.pi / 4):
         return abs(np.sin(self.theta)) < np.cos(thresholdAngle)
 
+    def intersect(self, line):
+        ct1 = np.cos(self.theta)
+        st1 = np.sin(self.theta)
+        ct2 = np.cos(line.theta)
+        st2 = np.sin(line.theta)
+        d = ct1 * st2 - st1 * ct2
+        if d == 0.0: raise ValueError('parallel lines')
+        x = (st2 * self.rho - st1 * line.rho) / d
+        y = (-ct2 * self.rho + ct1 * line.rho) / d
+        return (x, y)
+
     def draw(self, image, color=(0,0,255)):
-        p1,p2 = self.getSegment(1000,1000)
+        p1, p2 = self.getSegment(1000,1000)
         cv2.line(image, p1, p2, color, 2)
 
 
@@ -83,6 +94,9 @@ def drawLines(image, lines):
     for l in lines:
         l.draw(image)
 
+def drawPoint(image, point):
+    cv2.circle(image, point, 10, (0, 0, 255), -1)
+
 def grid(filename):
     im_gray = cv2.imread(filename, cv2.CV_LOAD_IMAGE_GRAYSCALE)
     resized_im = cv2.resize(im_gray, (gridWidth, gridHeight))
@@ -106,6 +120,10 @@ def grid(filename):
     bgr = cv2.cvtColor(resized_im, cv2.COLOR_GRAY2BGR)
     drawLines(bgr, horizontal)
     drawLines(bgr, vertical)
+
+    for h in horizontal:
+        for v in vertical:
+            drawPoint(bgr, h.intersect(v))
 
     cv2.namedWindow('image', cv2.WINDOW_NORMAL)
     cv2.imshow('image', bgr)

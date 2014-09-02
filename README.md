@@ -56,9 +56,19 @@ export them using the FEN notation (https://en.wikipedia.org/wiki/Forsyth–Edwa
 
 #### Grid Detection/Tile extraction
   - Using OpenCV to detect grids
-  ![Detected Grid](./images/grid.png)
 
+  - Using Canny algorithm for edge detection
+    ![Canny Edge Image](./images/canny.png)
 
+  - Find lines by using the standard Hough transform. This is done, iteratively, progressively decreasing the accumulator threshold parameter until there are at least 8 horizontal lines and 8 vertical lines. Lines that are too close to each other are ignored
+
+    ![Hough Lines Image 1](./images/hough1.png)
+
+    ![Hough Lines Image 2](./images/hough1.png)
+
+  - Calculate the line intersections
+
+    ![Detected Grid](./images/grid.png)
 
 ### To Do
 

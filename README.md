@@ -20,9 +20,21 @@ export them using the FEN notation (https://en.wikipedia.org/wiki/Forsyth–Edwa
 
 #### Board Detection
   - Read Image from file
+
+    ![Original Image](./images/orig.png)
+
   - Convert image to grayscale.
+
+    ![Grayscale Image](./images/gray.png)
+
   - Convert to black and white taking into account average image brightness.
-  - Find connected areas in BW image.
+
+    ![BW Image](./images/bw.png)
+
+  - Find connected areas in BW image using floodfill algorithm.
+
+    ![Floodfill Image](./images/floodfill.png)
+
   - Filter irrelevant areas:
     - Area either too small or too large.
     - Ratio height/width not close to 1.
@@ -32,8 +44,13 @@ export them using the FEN notation (https://en.wikipedia.org/wiki/Forsyth–Edwa
     - When ties exist, choose the top and bottommost points for left
       and right, respectively.
   - Find the farthest points on the left and right side of the lined formed by LR.
+
+    ![Perspective Points](./images/perspective.png)
+
   - Calculate perspective correction transformation using the 4 discovered points.
   - Apply the transformation to a copy of the original image and crop it to size.
+
+    ![Extracted Board](./images/extracted.png)
 
 ### Doing
 

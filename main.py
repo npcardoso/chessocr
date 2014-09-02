@@ -46,10 +46,11 @@ def ignoreAreas(image, areas, area_limits, ratio_limits):
 
 def main(filename):
     image_orig = Image.open(filename)
-    # image_orig.show()
+#    image_orig.show()
 
 # to grayscale
     image = image_orig.convert('L')
+#    image.show()
 
 
 # to black and white
@@ -60,10 +61,10 @@ def main(filename):
     else:
         image = image.point(lambda p: p < threshold and 255)
     image = image.convert('RGB')
+#    image.show()
 
 # find connected areas
     areas = colorAreas(image)
-    #    image.show()
 
 # find relevant connected areas
     size_min = 0.01 * image.size[0] * image.size[1]
@@ -72,14 +73,15 @@ def main(filename):
                         areas,
                         [size_min, size_max],
                         [0.5, 1])
-    # image.show()
+#    image.show()
+
+#    image = image_orig.copy().convert('RGBA')
+#    draw = ImageDraw.Draw(image)
+#    for area in areas:
+#        area.drawHighlights(draw)
+#    image.show()
+
     image = image_orig.copy().convert('RGBA')
-
-    # draw = ImageDraw.Draw(image)
-    # for area in areas:
-    #     area.drawHighlights(draw)
-    # image.show()
-
     for a in areas:
         tmp = a.extractArea(image, 1024, 1024);
         tmp.show()

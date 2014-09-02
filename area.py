@@ -12,56 +12,108 @@ class Area:
                              random.randint(1,255)])
         points = floodfill(pix, start_point , self.color, fg, boundaries)
         self.boundaries = calcBoundaries(points)
-        self.true_boundaries = (getClosestPoint(points, self.boundaries[0]),
-                                getClosestPoint(points, self.boundaries[1]))
-        self.horizontal_boundaries = (getExtremePoint(points, False),
-                                      getExtremePoint(points, True))
-        self.vertical_boundaries = (getExtremePointLine(points, self.horizontal_boundaries, False),
-                                    getExtremePointLine(points, self.horizontal_boundaries, True))
+
+        self.perspective_points = getPerspectivePoints(points)
+        (x_min, x_max, y_min, y_max) = self.perspective_points
+
         self.ratio = calcRatio(self.boundaries)
+        # FIXME: Calculate area using perspective points
         self.area = calcArea(self.boundaries)
 
     def drawHighlights(self, draw):
         p_min, p_max = self.boundaries
         draw.rectangle(list(p_min) + list(p_max), outline=tuple([0,128,128,128]))
 
-        p_min, p_max = self.true_boundaries
-        draw.rectangle(list(p_min) + list(p_max), outline=tuple([0, 255,0,128]))
-
-        p_min, p_max = self.horizontal_boundaries
-        draw.rectangle(list(p_min) + list(p_max), outline=tuple([0,0,255,128]))
-
-        p_min_v, p_max_v = self.vertical_boundaries
-        draw.polygon((p_min, p_min_v, p_max, p_max_v, p_min), outline=tuple([255,0,255,128]))
+        (x_min, x_max, y_min, y_max) = self.perspective_points
+        draw.polygon((x_min, y_min, x_max, y_max), outline=tuple([255,0,255,128]))
 
     def extractArea(self, image, w, h):
-        h_bound = self.horizontal_boundaries
-        v_bound = self.vertical_boundaries
+        (x_min, x_max, y_min, y_max) = self.perspective_points
 
 
         # Find correct rotation (assuming image rotation angle is small)
-        h_center = h_bound[0][0] + ((h_bound[1][0] - h_bound[0][0]) / 2)
-        if v_bound[0][0] > h_center:
-            pa = [v_bound[1],
-                  h_bound[1],
-                  v_bound[0],
-                  h_bound[0]]
+        h_center = x_min[0] + ((x_max[0] - x_min[0]) / 2)
+        if y_min[0] > h_center:
+            pa = [y_max,
+                  x_max,
+                  y_min,
+                  x_min]
         else:
-            pa = [h_bound[0],
-                  v_bound[1],
-                  h_bound[1],
-                  v_bound[0]]
+            pa = [x_min,
+                  y_max,
+                  x_max,
+                  y_min]
 
         pb = [(0,0),
               (w, 0),
               (w,h),
               (0, h)]
 
+        print(pb, pa)
+
         coeffs = calcCoeffs(pb, pa)
 
         return image \
             .copy() \
             .transform((w, h), Image.PERSPECTIVE, coeffs, Image.BICUBIC)
+
+
+
+def getPerspectivePoints(points):
+    def getExtremePoint(points, rightmost=True, topmost=None):
+        mult = -1
+        if rightmost:
+            mult = 1
+
+        if topmost is None:
+            topmost=not rightmost;
+
+        mult2 = -1
+        if topmost:
+            mult2 = 1
+
+        extreme = [points[0][0] * mult, points[0]]
+        for p in points:
+            val = p[0] * mult
+            if val > extreme[0]:
+                extreme = [val, p]
+            elif val == extreme[0]:
+                if p[1] * mult2 > extreme[1][1]:
+                    extreme = [val, p]
+
+        return extreme[1]
+
+    def getExtremePointLine(points, line, topmost=True):
+        mult = -1
+        if topmost:
+            mult = 1
+
+        extreme = [(pnt2line(points[0], line[0], line[1])[0]) * mult, points[0]]
+        for p in points:
+            val = (pnt2line(p, line[0], line[1])[0]) * mult
+            if val > extreme[0]:
+                extreme = [val, p]
+            elif val == extreme[0]:
+                if p[1] * mult > extreme[1][1]:
+                    extreme = [val, p]
+
+        return extreme[1]
+
+    x_min, x_max = (getExtremePoint(points, False, False),
+                    getExtremePoint(points, True, True))
+
+
+    if x_min[1] > x_max[1]:
+        x_min, x_max = (getExtremePoint(points, False, True),
+                        getExtremePoint(points, True, False))
+
+
+
+    y_min, y_max = (getExtremePointLine(points, (x_min, x_max), False),
+                    getExtremePointLine(points, (x_min, x_max), True))
+
+    return(x_min, x_max, y_min, y_max)
+
 
 
 
@@ -76,49 +128,6 @@ def calcBoundaries(points):
         min_point = minMaxPoint(min_point, p, min)
         max_point = minMaxPoint(max_point, p, max)
     return (min_point, max_point)
-
-def calcDistSqr(p1, p2):
-    return ((p1[0] - p2[0])**2) + ((p1[1] - p2[1]) ** 2)
-
-def getClosestPoint(points, point):
-    closest = [calcDistSqr(points[0], point), points[0]]
-    for p in points:
-        dist = calcDistSqr(p, point)
-        if dist < closest[0]:
-            closest = [dist, p]
-    return closest[1]
-
-def getExtremePoint(points, rightmost=True):
-    mult = -1
-    if rightmost:
-        mult = 1
-
-    extreme = [points[0][0] * mult, points[0]]
-    for p in points:
-        val = p[0] * mult
-        if val > extreme[0]:
-            extreme = [val, p]
-        elif val == extreme[0]:
-            if p[1] * mult > extreme[1][1]:
-                extreme = [val, p]
-
-    return extreme[1]
-
-def getExtremePointLine(points, line, topmost=True):
-    mult = -1
-    if topmost:
-        mult = 1
-
-    extreme = [(pnt2line(points[0], line[0], line[1])[0]) * mult, points[0]]
-    for p in points:
-        val = (pnt2line(p, line[0], line[1])[0]) * mult
-        if val > extreme[0]:
-            extreme = [val, p]
-        elif val == extreme[0]:
-            if p[1] * mult > extreme[1][1]:
-                extreme = [val, p]
-
-    return extreme[1]
 
 
 def calcRatio (boundaries):

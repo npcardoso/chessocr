@@ -56,6 +56,8 @@ export them using the FEN notation (https://en.wikipedia.org/wiki/Forsyth–Edwa
 
 #### Grid Detection/Tile extraction
   - Using OpenCV to detect grids
+  ![Detected Grid](./images/grid.png)
+
 
 
 ### To Do

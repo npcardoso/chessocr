@@ -11,7 +11,7 @@ export them using the FEN notation (https://en.wikipedia.org/wiki/Forsyth–Edwa
     virtualenv env
     source env/bin/activate
     pip install -r requirements.txt
-    python main.py <filename>
+    python src/main.py <filename>
 ```
 
 ## Roadmap

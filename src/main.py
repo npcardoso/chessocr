@@ -44,7 +44,7 @@ def ignoreAreas(image, areas, area_limits, ratio_limits):
 
 
 
-def main(filename):
+def main(filename, thresholdAdj=2/3.0):
     image_orig = Image.open(filename)
 #    image_orig.show()
 
@@ -55,7 +55,7 @@ def main(filename):
 
 # to black and white
 # FIXME: 2/3 by trial and error
-    threshold = brightness(image) * 2 / 3
+    threshold = brightness(image) * thresholdAdj
     if threshold > 128:
         image = image.point(lambda p: p > threshold and 255)
     else:
@@ -75,18 +75,20 @@ def main(filename):
                         [0.5, 1])
 #    image.show()
 
-#    image = image_orig.copy().convert('RGBA')
-#    draw = ImageDraw.Draw(image)
-#    for area in areas:
-#        area.drawHighlights(draw)
-#    image.show()
-
     image = image_orig.copy().convert('RGBA')
+    draw = ImageDraw.Draw(image)
+    for area in areas:
+        area.drawHighlights(draw)
+    image.show()
+
+#    image = image_orig.copy().convert('RGBA')
     for a in areas:
         tmp = a.extractArea(image, 1024, 1024);
         tmp.show()
 
-if len(sys.argv) != 2:
-    print("Usage: " + sys.argv[0] + " <filename>")
-else:
+if len(sys.argv) < 2 or len(sys.argv) > 3:
+    print("Usage: " + sys.argv[0] + " <filename> [<threshold_adj>]")
+elif len(sys.argv) == 2:
     main(sys.argv[1])
+elif len(sys.argv) == 3:
+    main(sys.argv[1], float(sys.argv[2]))

@@ -13,43 +13,30 @@ class Area:
         points = floodfill(pix, start_point , self.color, fg, boundaries)
         self.boundaries = calcBoundaries(points)
 
-        self.perspective_points = getPerspectivePoints(points)
-        (x_min, x_max, y_min, y_max) = self.perspective_points
-
         self.ratio = calcRatio(self.boundaries)
         # FIXME: Calculate area using perspective points
         self.area = calcArea(self.boundaries)
+
+        self.perspective_points = getPerspectivePoints(points)
 
     def drawHighlights(self, draw):
         p_min, p_max = self.boundaries
         draw.rectangle(list(p_min) + list(p_max), outline=tuple([0,128,128,128]))
 
-        (x_min, x_max, y_min, y_max) = self.perspective_points
-        draw.polygon((x_min, y_min, x_max, y_max), outline=tuple([255,0,255,128]))
+        perspective =(a,b,c,d) = self.perspective_points
+        draw.polygon((a, c), outline=tuple([255,0,0,128]))
+        draw.polygon((b, d), outline=tuple([0,0,255,128]))
+
+        draw.polygon(perspective, outline=tuple([255,0,255,128]))
 
     def extractArea(self, image, w, h):
-        (x_min, x_max, y_min, y_max) = self.perspective_points
-
-
-        # Find correct rotation (assuming image rotation angle is small)
-        h_center = x_min[0] + ((x_max[0] - x_min[0]) / 2)
-        if y_min[0] > h_center:
-            pa = [y_max,
-                  x_max,
-                  y_min,
-                  x_min]
-        else:
-            pa = [x_min,
-                  y_max,
-                  x_max,
-                  y_min]
+        pa = self.perspective_points
 
         pb = [(0,0),
               (w, 0),
               (w,h),
               (0, h)]
 
-        print(pb, pa)
 
         coeffs = calcCoeffs(pb, pa)
 
@@ -58,61 +45,96 @@ class Area:
             .transform((w, h), Image.PERSPECTIVE, coeffs, Image.BICUBIC)
 
 
+def getExtremePoint(points, order, strategies):
+    extreme = points[0]
+    for p in points:
+        for s in order:
+            if extreme[s] == p[s]:
+                continue
+            val = strategies[s](extreme[s], p[s])
+            if val != extreme[s]:
+                extreme = p
+            break
+    return extreme
+
+def getExtremePointLine(points, line, strategy):
+    extreme = ((pnt2line(points[0], line[0], line[1])[0]), points[0])
+    for p in points:
+        val = strategy(pnt2line(p, line[0], line[1])[0], extreme[0])
+        if val != extreme[0]:
+            extreme = (val, p)
+
+    return extreme[1]
+
+
+def distSqr(pa, pb):
+        return (pa[0]-pb[0]) ** 2 + (pa[1]-pb[1]) ** 2
+
+def getClosest(points, point):
+    closest = (distSqr(points[0], point), points[0])
+    for p in points:
+        val = distSqr(p, point)
+        if val < closest[0]:
+            closest = (val, p)
+    return closest[1]
+
+def getExtremes(points, order):
+
+    mins = (getExtremePoint(points, order, (min, min)),
+            getExtremePoint(points, order, (min, max)))
+
+    maxes = (getExtremePoint(points, order, (max, min)),
+             getExtremePoint(points, order, (max, max)))
+
+
+    maxPair = (0, ((0, 0), (0, 0)))
+
+    for a in mins:
+        for b in maxes:
+            val = distSqr(a, b)
+            if val > maxPair[0]:
+                maxPair = (val, (a, b))
+
+    return maxPair[1]
+
+
+def sortPerspectivePoints(far, near):
+    points = list(far) + list(near)
+    left = getExtremePoint(points, (0,1), (min, min))
+    right = getExtremePoint(points, (0,1), (max, max))
+    width = right[0] - left[0]
+
+    top = getExtremePoint(far, (1,0), (min, min))
+
+    if top[0] - left[0] < width / 2:
+        a = top
+        b = getExtremePoint(near, (1,0), (max, min))
+        c = getExtremePoint(far, (1,0), (max, max))
+        d = getExtremePoint(near, (1,0), (min, max))
+    else:
+        a = getExtremePoint(near, (0,1), (min, min))
+        b = top
+        c = getExtremePoint(near, (0,1), (max, max))
+        d = getExtremePoint(far, (1,0), (max, max))
+    return (a,b,c,d)
+
 
 def getPerspectivePoints(points):
-    def getExtremePoint(points, rightmost=True, topmost=None):
-        mult = -1
-        if rightmost:
-            mult = 1
+    if len(points) <= 0:
+        return ((0,0)) * 4
+    a, b = getExtremes(points, (0, 1))
+    c, d = getExtremes(points, (1, 0))
 
-        if topmost is None:
-            topmost=not rightmost;
+    if distSqr(a, b) > distSqr(c, d):
+        far = (a, b)
+    else:
+        far = (c, d)
 
-        mult2 = -1
-        if topmost:
-            mult2 = 1
+    near = (getExtremePointLine(points, far, min),
+            getExtremePointLine(points, far, max))
 
-        extreme = [points[0][0] * mult, points[0]]
-        for p in points:
-            val = p[0] * mult
-            if val > extreme[0]:
-                extreme = [val, p]
-            elif val == extreme[0]:
-                if p[1] * mult2 > extreme[1][1]:
-                    extreme = [val, p]
+    return sortPerspectivePoints(far, near)
 
-        return extreme[1]
-
-    def getExtremePointLine(points, line, topmost=True):
-        mult = -1
-        if topmost:
-            mult = 1
-
-        extreme = [(pnt2line(points[0], line[0], line[1])[0]) * mult, points[0]]
-        for p in points:
-            val = (pnt2line(p, line[0], line[1])[0]) * mult
-            if val > extreme[0]:
-                extreme = [val, p]
-            elif val == extreme[0]:
-                if p[1] * mult > extreme[1][1]:
-                    extreme = [val, p]
-
-        return extreme[1]
-
-    x_min, x_max = (getExtremePoint(points, False, False),
-                    getExtremePoint(points, True, True))
-
-
-    if x_min[1] > x_max[1]:
-        x_min, x_max = (getExtremePoint(points, False, True),
-                        getExtremePoint(points, True, False))
-
-
-
-    y_min, y_max = (getExtremePointLine(points, (x_min, x_max), False),
-                    getExtremePointLine(points, (x_min, x_max), True))
-
-    return(x_min, x_max, y_min, y_max)
 
 
 

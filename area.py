@@ -38,9 +38,9 @@ class Area:
         h_bound = self.horizontal_boundaries
         v_bound = self.vertical_boundaries
 
+
+        # Find correct rotation (assuming image rotation angle is small)
         h_center = h_bound[0][0] + ((h_bound[1][0] - h_bound[0][0]) / 2)
-        print(h_center)
-        print(v_bound)
         if v_bound[0][0] > h_center:
             pa = [v_bound[1],
                   h_bound[1],

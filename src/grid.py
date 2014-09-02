@@ -17,56 +17,71 @@ gridWidth = 640
 gridHeight = 640
 closeLineThreshold = 40
 
-def point(rho, theta):
-    a = np.cos(theta)
-    b = np.sin(theta)
-    x0 = a * rho
-    y0 = b * rho
-    x1 = int(x0 + 1000 * (-b))
-    y1 = int(y0 + 1000 * a)
-    x2 = int(x0 - 1000 * (-b))
-    y2 = int(y0 - 1000 * a)
-    return [(x1, y1), (x2, y2)]
+class Line:
+    def __init__(self, rho, theta):
+        self.rho = rho
+        self.theta = theta
+        self.cos_factor = np.cos(theta)
+        self.sin_factor = np.sin(theta)
+        self.center = (self.cos_factor * rho, self.sin_factor * rho)
 
-def horizontal(theta):
-    return abs(np.cos(theta)) < np.cos(np.pi / 4)
 
-def vertical(theta):
-    return not horizontal(theta)
+    def getSegment(self, lenLeft, lenRight):
+        a = self.cos_factor
+        b = self.sin_factor
+        (x0, y0) = self.center
+
+        x1 = int(x0 + lenRight * (-b))
+        y1 = int(y0 + lenRight * a)
+        x2 = int(x0 - lenLeft * (-b))
+        y2 = int(y0 - lenLeft  * a)
+        return ((x1, y1), (x2, y2))
+
+    def isHorizontal(self, thresholdAngle=np.pi / 4):
+        return abs(np.cos(self.theta)) < np.cos(thresholdAngle)
+
+    def isVertical(self, thresholdAngle=np.pi / 4):
+        return abs(np.sin(self.theta)) < np.cos(thresholdAngle)
+
+    def draw(self, image, color=(0,0,255)):
+        p1,p2 = self.getSegment(1000,1000)
+        cv2.line(image, p1, p2, color, 2)
+
 
 def partitionLines(lines):
-    def map1(x):
-        ((x1, y1), (x2, y2)) = point(x[0], x[1])
-        return (x1 + x2) / 2
-    def map2(x):
-        ((x1, y1), (x2, y2)) = point(x[0], x[1])
-        return (y1 + y2) / 2
+    h = filter(lambda x: x.isHorizontal(), lines)
+    v = filter(lambda x: x.isVertical(), lines)
 
-    v = map(map1, filter(lambda x: vertical(x[1]), lines))
-    v.sort()
-    h = map(map2, filter(lambda x: horizontal(x[1]), lines))
+    h = [(l.center[1], l) for l in h]
+    v = [(l.center[0], l) for l in v]
+
     h.sort()
+    v.sort()
+
+    h = [l[1] for l in h]
+    v = [l[1] for l in v]
 
     return (v, h)
 
-def filterCloseLines(lines, threshold = closeLineThreshold):
+def filterCloseLines(lines, horizontal=True, threshold = closeLineThreshold):
+    if horizontal:
+        item = 1
+    else:
+        item = 0
+
     i = 0
     ret = []
     while i < len(lines):
         itmp = i
-        cnt = 0
-        while i < len(lines) and (lines[i] - lines[itmp] < threshold):
-            cnt += lines[i]
+        while i < len(lines) and (lines[i].center[item] - lines[itmp].center[item] < threshold):
             i += 1
-        ret.append(cnt / (i - itmp))
-
+        target = int(itmp + ((i-itmp) / 2))
+        ret.append(lines[target])
     return ret
 
-def drawLines(image, horizontal, vertical):
-    for x in vertical:
-        cv2.line(image, (x, 0), (x, 1000), (0, 0, 255), 2)
-    for y in horizontal:
-        cv2.line(image, (0, y), (1000, y), (0, 0, 255), 2)
+def drawLines(image, lines):
+    for l in lines:
+        l.draw(image)
 
 def grid(filename):
     im_gray = cv2.imread(filename, cv2.CV_LOAD_IMAGE_GRAYSCALE)
@@ -81,15 +96,16 @@ def grid(filename):
         if lines is None:
             continue
 
-        lines = lines[0]
+        lines = [Line(l[0], l[1]) for l in lines[0]]
         (vertical, horizontal) = partitionLines(lines)
-        vertical = filterCloseLines(vertical)
-        horizontal = filterCloseLines(horizontal)
+        vertical = filterCloseLines(vertical, horizontal=False)
+        horizontal = filterCloseLines(horizontal, horizontal=True)
 
         if len(vertical) >= 8 and len(horizontal) >= 8: break
 
-    bgr = resized_im
-    drawLines(bgr, horizontal, vertical)
+    bgr = cv2.cvtColor(resized_im, cv2.COLOR_GRAY2BGR)
+    drawLines(bgr, horizontal)
+    drawLines(bgr, vertical)
 
     cv2.namedWindow('image', cv2.WINDOW_NORMAL)
     cv2.imshow('image', bgr)

@@ -64,7 +64,7 @@ export them using the FEN notation (https://en.wikipedia.org/wiki/Forsyth–Edwa
 
     ![Hough Lines Image 1](./images/hough1.png)
 
-    ![Hough Lines Image 2](./images/hough1.png)
+    ![Hough Lines Image 2](./images/hough2.png)
 
   - Calculate the line intersections
 

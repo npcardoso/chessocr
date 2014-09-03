@@ -1,33 +1,51 @@
 import random
-from PIL import Image
 
-from floodfill import floodfill
+import cv2
+import numpy as np
+
 from vectors import pnt2line
-from perspective import calcCoeffs
+
+def showImage(image):
+   cv2.namedWindow('image', cv2.WINDOW_NORMAL)
+   cv2.imshow('image', image)
+   cv2.waitKey(0)
+   cv2.destroyAllWindows()
 
 class Area:
-    def __init__(self, pix, start_point, bg, fg, boundaries):
+    def __init__(self, image, start_point):
         self.color = tuple([random.randint(1,255),
-                             random.randint(1,255),
-                             random.randint(1,255)])
-        points = floodfill(pix, start_point , self.color, fg, boundaries)
+                            random.randint(1,255),
+                            random.randint(1,255)])
+        xx, yy, _ = image.shape
+        mask = np.zeros((xx + 2, yy + 2), np.uint8)
+        print "started floodfill"
+        print cv2.floodFill(image, mask, start_point, self.color, flags = 8)
+        showImage(image)
+        print "finished floodfill"
+        points = np.where((image == self.color))
+        if len(points) != 0:
+            points = zip(points[0], points[1])
+
+        print "2"
         self.boundaries = calcBoundaries(points)
 
         self.ratio = calcRatio(self.boundaries)
+        print "3"
         # FIXME: Calculate area using perspective points
         self.area = calcArea(self.boundaries)
+        print "4"
 
-        self.perspective_points = getPerspectivePoints(points)
+        # self.perspective_points = getPerspectivePoints(points)
+        print "5"
 
-    def drawHighlights(self, draw):
+    def drawHighlights(self, image):
         p_min, p_max = self.boundaries
-        draw.rectangle(list(p_min) + list(p_max), outline=tuple([0,128,128,128]))
+        cv2.rectangle(image, p_mix, p_max, (128, 128, 0))
 
         perspective =(a,b,c,d) = self.perspective_points
-        draw.polygon((a, c), outline=tuple([255,0,0,128]))
-        draw.polygon((b, d), outline=tuple([0,0,255,128]))
-
-        draw.polygon(perspective, outline=tuple([255,0,255,128]))
+        cv2.polylines(image, perspective, False, (0,0,255))
+        cv2.polylines(image, (a,c), False, (255,0,0))
+        cv2.polylines(image, (b,d), False, (255, 0, 255))
 
     def extractArea(self, image, w, h):
         pa = self.perspective_points
@@ -37,13 +55,8 @@ class Area:
               (w,h),
               (0, h)]
 
-
-        coeffs = calcCoeffs(pb, pa)
-
-        return image \
-            .copy() \
-            .transform((w, h), Image.PERSPECTIVE, coeffs, Image.BICUBIC)
-
+        coeffs = cv2.getPerspectiveTransform(pa, pb)
+        return cv2.warpPerspective(image, coeffs, (w, h))
 
 def getExtremePoint(points, order, strategies):
     extreme = points[0]
@@ -134,9 +147,6 @@ def getPerspectivePoints(points):
             getExtremePointLine(points, far, max))
 
     return sortPerspectivePoints(far, near)
-
-
-
 
 
 def calcBoundaries(points):

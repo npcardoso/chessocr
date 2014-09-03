@@ -2,6 +2,7 @@ import sys
 
 # FIXME: needed on arch..
 sys.path.append('/usr/lib/python2.7/site-packages/')
+sys.path.append('/usr/local/lib/python2.7/site-packages/')
 
 import cv2
 import numpy as np

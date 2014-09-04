@@ -1,62 +1,67 @@
-import random
-
 import cv2
 import numpy as np
 
 from vectors import pnt2line
 
-def showImage(image):
-   cv2.namedWindow('image', cv2.WINDOW_NORMAL)
-   cv2.imshow('image', image)
-   cv2.waitKey(0)
-   cv2.destroyAllWindows()
-
 class Area:
-    def __init__(self, image, start_point):
-        self.color = tuple([random.randint(1,255),
-                            random.randint(1,255),
-                            random.randint(1,255)])
-        xx, yy, _ = image.shape
-        mask = np.zeros((xx + 2, yy + 2), np.uint8)
-        print "started floodfill"
-        print cv2.floodFill(image, mask, start_point, self.color, flags = 8)
-        showImage(image)
-        print "finished floodfill"
-        points = np.where((image == self.color))
-        if len(points) != 0:
-            points = zip(points[0], points[1])
+    def __init__(self, color, pixels, pos, shape, start_point):
+        self._color = color
+        self._pixels = pixels
+        self._shape = pos
+        self._shape = shape
+        self._boundaries = (pos, (pos[0] + shape[0], pos[1] + shape[1]))
+        self._start_point = start_point
 
-        print "2"
-        self.boundaries = calcBoundaries(points)
+    def getColor(self):
+        return self._color
 
-        self.ratio = calcRatio(self.boundaries)
-        print "3"
-        # FIXME: Calculate area using perspective points
-        self.area = calcArea(self.boundaries)
-        print "4"
+    def getRatio(self):
+        w, h = self._shape
+        if h == 0:
+            return 0
+        ret = w / float(h)
+        if ret > 1:
+            return 1 / ret
+        return ret
 
-        # self.perspective_points = getPerspectivePoints(points)
-        print "5"
+    def getBoundaries(self):
+        return self._boundaries
 
-    def drawHighlights(self, image):
-        p_min, p_max = self.boundaries
-        cv2.rectangle(image, p_mix, p_max, (128, 128, 0))
+    def getArea(self):
+        w, h = self._shape
+        return w * h
 
-        perspective =(a,b,c,d) = self.perspective_points
-        cv2.polylines(image, perspective, False, (0,0,255))
-        cv2.polylines(image, (a,c), False, (255,0,0))
-        cv2.polylines(image, (b,d), False, (255, 0, 255))
 
-    def extractArea(self, image, w, h):
-        pa = self.perspective_points
+    def getPerspective(self, image):
+        if self._pixels <= 0:
+            return ((0,0)) * 4
 
-        pb = [(0,0),
-              (w, 0),
-              (w,h),
-              (0, h)]
+        (x, y), (xx, yy) = self._boundaries
 
-        coeffs = cv2.getPerspectiveTransform(pa, pb)
-        return cv2.warpPerspective(image, coeffs, (w, h))
+        points = np.where((image[y:yy, x:xx] == self._color))
+
+        xx = [i + x for i in points[1]]
+        yy = [i + y for i in points[0]]
+
+
+        points = tuple(zip(xx, yy))
+        a, b = getExtremes(points, (0, 1))
+        c, d = getExtremes(points, (1, 0))
+
+        if distSqr(a, b) > distSqr(c, d):
+            far = (a, b)
+        else:
+            far = (c, d)
+
+        near = (getExtremePointLine(points, far, min),
+                getExtremePointLine(points, far, max))
+
+
+        perspective = sortPerspectivePoints(far, near)
+
+        return perspective
+
+
 
 def getExtremePoint(points, order, strategies):
     extreme = points[0]
@@ -129,24 +134,10 @@ def sortPerspectivePoints(far, near):
         b = top
         c = getExtremePoint(near, (0,1), (max, max))
         d = getExtremePoint(far, (1,0), (max, max))
+
     return (a,b,c,d)
 
 
-def getPerspectivePoints(points):
-    if len(points) <= 0:
-        return ((0,0)) * 4
-    a, b = getExtremes(points, (0, 1))
-    c, d = getExtremes(points, (1, 0))
-
-    if distSqr(a, b) > distSqr(c, d):
-        far = (a, b)
-    else:
-        far = (c, d)
-
-    near = (getExtremePointLine(points, far, min),
-            getExtremePointLine(points, far, max))
-
-    return sortPerspectivePoints(far, near)
 
 
 def calcBoundaries(points):
@@ -160,18 +151,3 @@ def calcBoundaries(points):
         min_point = minMaxPoint(min_point, p, min)
         max_point = minMaxPoint(max_point, p, max)
     return (min_point, max_point)
-
-
-def calcRatio (boundaries):
-    p1, p2 = boundaries
-    a, b = (p2[0] - p1[0]), (p2[1] - p1[1])
-    if b == 0:
-        return 0
-    ret = a / float(b)
-    if ret > 1:
-        return 1 / ret
-    return ret
-
-def calcArea(boundaries):
-    p1, p2 = boundaries
-    return (p2[0] - p1[0]) * (p2[1] - p1[1])

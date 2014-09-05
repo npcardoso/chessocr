@@ -2,8 +2,10 @@ import sys
 sys.path.append('/usr/lib/python2.7/site-packages/')
 sys.path.append('/usr/local/lib/python2.7/site-packages/')
 
-from util import showImage, drawPerspective, drawBoundaries, drawLines, drawPoint, extractPerspective
+from board import Board
 from extract import extractBoards, extractGrid, extractTiles
+from util import showImage, drawPerspective, drawBoundaries, drawLines, drawPoint, extractPerspective
+
 import cv2
 
 from line import Line
@@ -19,14 +21,17 @@ def main(filename):
    boards = extractBoards(image, extract_width, extract_height)
    for b in boards:
       grid = (horizontal, vertical) = extractGrid(b, 9, 9)
-      b = b.copy()
+      b = Board(extractTiles(b, grid, 50, 50), 8, 8)
+
       #drawLines(b, horizontal)
       #drawLines(b, vertical, color=(255,0,0))
       #for h in horizontal:
       #   for v in vertical:
       #      drawPoint(b, h.intersect(v), (0,255,255))
-      for (x,y), t in extractTiles(b, grid, 50, 50):
-         showImage(t)
+      for x in range(8):
+         for y in range(8):
+            t = b.getTile(x,y)
+            showImage(t.getImage(), name = "Tile: (%d,%d)" % (t.getX(), t.getY()))
 
 
 

@@ -8,17 +8,29 @@ def showImage(image, name="image"):
     cv2.waitKey(0)
     cv2.destroyAllWindows()
 
+def drawLine(image, a, b, color, thickness=1):
+    cv2.line(image, tuple(a), tuple(b), color, thickness)
+
+
+def drawContour(image, contour, color, thickness=4):
+    for i in range(len(contour)):
+        p1 = tuple(contour[i])
+        p2 = tuple(contour[int((i+1) % len(contour))])
+        drawLine(image, p1, p2, color, thickness)
+
+
 
 def drawBoundaries (image, boundaries, color=(128, 128, 0)):
     p_min, p_max = boundaries
     cv2.rectangle(image, p_min, p_max, color)
 
 
-def drawPerspective(image, perspective):
+def drawPerspective(image, perspective, thickness=4):
     (a,b,c,d) = perspective
-#    cv2.polylines(image, np.array(perspective, 'int32'), False, (0,0,255))
-    cv2.line(image, a, c, (255,0,0))
-    cv2.line(image, b,d, (255, 0, 255))
+
+    #    cv2.polylines(image, np.array(perspective, 'int32'), False, (0,0,255) )
+    drawLine(image, a,c, (255,0,0), thickness)
+    drawLine(image, b,d, (255,0,255), thickness)
 
 
 def extractPerspective(image, perspective, w, h, dest=None):
@@ -30,3 +42,9 @@ def extractPerspective(image, perspective, w, h, dest=None):
 
     coeffs = cv2.getPerspectiveTransform(perspective, dest)
     return cv2.warpPerspective(image, coeffs, (w, h))
+
+
+def ratio(a,b):
+    if a == 0 or b == 0:
+        return -1
+    return min(a,b)/float(max(a,b))

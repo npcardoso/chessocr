@@ -1,65 +1,26 @@
-import cv2
 import numpy as np
 
-from vectors import pnt2line
-
-class Area:
-    def __init__(self, color, pixels, pos, shape, start_point):
-        self._color = color
-        self._pixels = pixels
-        self._shape = pos
-        self._shape = shape
-        self._boundaries = (pos, (pos[0] + shape[0], pos[1] + shape[1]))
-        self._start_point = start_point
-
-    def getColor(self):
-        return self._color
-
-    def getRatio(self):
-        w, h = self._shape
-        if h == 0:
-            return 0
-        ret = w / float(h)
-        if ret > 1:
-            return 1 / ret
-        return ret
-
-    def getBoundaries(self):
-        return self._boundaries
-
-    def getArea(self):
-        w, h = self._shape
-        return w * h
+def getPerspective(points):
+    points=np.squeeze(points)
+    if len(points) <= 0:
+        return ((0,0)) * 4
 
 
-    def getPerspective(self, image):
-        if self._pixels <= 0:
-            return ((0,0)) * 4
+    a, b = getExtremes(points, (0, 1))
+    c, d = getExtremes(points, (1, 0))
 
-        (x, y), (xx, yy) = self._boundaries
+    if distSqr(a, b) > distSqr(c, d):
+        far = (a, b)
+    else:
+        far = (c, d)
 
-        points = np.where((image[y:yy, x:xx] == self._color))
-
-        xx = [i + x for i in points[1]]
-        yy = [i + y for i in points[0]]
-
-
-        points = tuple(zip(xx, yy))
-        a, b = getExtremes(points, (0, 1))
-        c, d = getExtremes(points, (1, 0))
-
-        if distSqr(a, b) > distSqr(c, d):
-            far = (a, b)
-        else:
-            far = (c, d)
-
-        near = (getExtremePointLine(points, far, min),
-                getExtremePointLine(points, far, max))
+    near = (getExtremePointLine(points, far, min),
+            getExtremePointLine(points, far, max))
 
 
-        perspective = sortPerspectivePoints(far, near)
+    perspective = sortPerspectivePoints(far, near)
 
-        return perspective
+    return perspective
 
 
 
@@ -151,3 +112,70 @@ def calcBoundaries(points):
         min_point = minMaxPoint(min_point, p, min)
         max_point = minMaxPoint(max_point, p, max)
     return (min_point, max_point)
+
+
+
+
+##################################################################
+# FIXME: refactor this
+
+import math
+
+def dot(v,w):
+    x,y = v
+    X,Y = w
+    return x*X + y*Y
+
+def length(v):
+    x,y = v
+    return math.sqrt(x*x + y*y)
+
+def vector(b,e):
+    x,y = b
+    X,Y = e
+    return (X-x, Y-y)
+
+def perp(b):
+    x,y = b
+    return (-y,x)
+
+def unit(v):
+    x,y = v
+    mag = length(v)
+    if mag == 0:
+        return (1, 0)
+    return (x/mag, y/mag)
+
+def distance(p0,p1):
+    return length(vector(p0,p1))
+
+def scale(v,sc):
+    x,y = v
+    return (x * sc, y * sc)
+
+def add(v,w):
+    x,y = v
+    X,Y = w
+    return (x+X, y+Y)
+
+def sub(v,w):
+    x,y = v
+    X,Y = w
+    return (x-X, y-Y)
+
+
+def pnt2line(pnt, start, end):
+    line_vec = vector(start, end)
+    pnt_vec = vector(start, pnt)
+    line_len = length(line_vec)
+    if line_len == 0:
+        return (distance(pnt, start), start)
+    line_unitvec = unit(line_vec)
+    pnt_vec_scaled = scale(pnt_vec, 1.0/line_len)
+    t = dot(line_unitvec, pnt_vec_scaled)
+    nearest = scale(line_vec, t)
+    dist = distance(nearest, pnt_vec)
+    nearest = add(nearest, start)
+    if (dot(perp(vector(start, pnt)), vector(start,end))) < 0:
+        return (-dist, nearest)
+    return (dist, nearest)

@@ -52,6 +52,7 @@ def extractBoards(img, w, h):
    contour_ids = ignoreContours(im_bw, contours, hierarchy)
 
    boards = [im_gray]
+
    for i in contour_ids:
        color = (0,0,255)
        c = contours[i]
@@ -60,10 +61,11 @@ def extractBoards(img, w, h):
        hull = np.squeeze(hull,1)
 
        drawContour(im_gray, hull, color)
-       perspective=getPerspective(hull)
+       perspective=getPerspective(img, hull)
 
-       b = extractPerspective(img, perspective, w, h)
-       boards.append(b)
+       if perspective is not None:
+           b = extractPerspective(img, perspective, w, h)
+           boards.append(b)
+           drawPerspective(im_gray, perspective)
 
-       drawPerspective(im_gray, perspective)
    return boards

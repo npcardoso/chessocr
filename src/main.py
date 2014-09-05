@@ -2,10 +2,11 @@ import sys
 sys.path.append('/usr/lib/python2.7/site-packages/')
 sys.path.append('/usr/local/lib/python2.7/site-packages/')
 
-from util import showImage, drawPerspective, drawBoundaries, extractPerspective
-from extract import extractBoards
-
+from util import showImage, drawPerspective, drawBoundaries, drawLines, drawPoint, extractPerspective
+from extract import extractBoards, extractGrid
 import cv2
+
+from line import Line
 
 
 extract_width=400
@@ -14,11 +15,19 @@ extract_height=400
 
 def main(filename):
    image = cv2.imread(filename)
-   #find connected areas
 
    boards = extractBoards(image, extract_width, extract_height)
    for b in boards:
+      horizontal, vertical = extractGrid(b, 9, 9)
+      b = b.copy()
+      drawLines(b, horizontal)
+      drawLines(b, vertical, color=(255,0,0))
+      for h in horizontal:
+         for v in vertical:
+            drawPoint(b, h.intersect(v), (0,255,255))
       showImage(b)
+
+
 
 
 

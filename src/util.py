@@ -37,12 +37,12 @@ def drawPerspective(image, perspective, thickness=4):
     drawLine(image, b,d, (255,0,255), thickness)
 
 
-def drawLines(image, lines):
+def drawLines(image, lines, color=(0,0,255), thickness=2):
     for l in lines:
-        l.draw(image)
+        l.draw(image, color, thickness)
 
 def drawPoint(image, point, color, thickness=4):
-    cv2.circle(image, point, thickness, color)
+    cv2.circle(image, tuple([int(i) for i in point]), thickness, color)
 
 
 def extractPerspective(image, perspective, w, h, dest=None):

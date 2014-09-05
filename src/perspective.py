@@ -17,7 +17,7 @@ def getPerspective(image, points):
         if lines is None:
             continue
         lines = [Line(l[0], l[1]) for l in lines[0]]
-        (vertical, horizontal) = partitionLines(lines)
+        (horizontal, vertical) = partitionLines(lines)
         vertical = filterCloseLines(vertical, horizontal=False)
         horizontal = filterCloseLines(horizontal, horizontal=True)
 
@@ -30,12 +30,12 @@ def getPerspective(image, points):
         return None
 
 
-    if vertical[0].center[0] > vertical[1].center[0]:
+    if vertical[0].getCenter()[0] > vertical[1].getCenter()[0]:
         v2, v1 = vertical
     else:
         v1, v2 = vertical
 
-    if horizontal[0].center[1] > horizontal[1].center[1]:
+    if horizontal[0].getCenter()[1] > horizontal[1].getCenter()[1]:
         h2, h1 = horizontal
     else:
         h1, h2 = horizontal

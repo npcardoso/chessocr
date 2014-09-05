@@ -1,7 +1,9 @@
+from line import Line, partitionLines, filterCloseLines
 from perspective import getPerspective
 from util import ratio, extractPerspective
 from util import showImage, drawPerspective, drawBoundaries, drawContour, writeDocumentationImage
 from util import randomColor
+
 
 
 import cv2
@@ -99,3 +101,38 @@ def extractBoards(img, w, h):
 
 
     return boards
+
+
+
+
+def extractGrid(image,
+                nvertical,
+                nhorizontal,
+                threshold1 = 50,
+                threshold2 = 150,
+                apertureSize = 3,
+                hough_threshold_min=50,
+                hough_threshold_max=150):
+
+    w, h, _ = image.shape
+    close_threshold_v = (w / nvertical) / 4
+    close_threshold_h = (h / nhorizontal) / 4
+
+
+    im_gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+    thresh, im_bw = cv2.threshold(im_gray, 128, 255, cv2.THRESH_BINARY | cv2.THRESH_OTSU)
+    im_canny = cv2.Canny(im_bw, threshold1, threshold2, apertureSize=apertureSize)
+
+    for i in range(hough_threshold_max - hough_threshold_min + 1):
+        lines = cv2.HoughLines(im_canny, 1, np.pi / 180, hough_threshold_max - i)
+        if lines is None:
+            continue
+
+        lines = [Line(l[0], l[1]) for l in lines[0]]
+        horizontal, vertical = partitionLines(lines)
+        vertical = filterCloseLines(vertical, horizontal=False, threshold=close_threshold_v)
+        horizontal = filterCloseLines(horizontal, horizontal=True, threshold=close_threshold_h)
+
+        if len(vertical) >= nvertical and \
+           len(horizontal) >= nhorizontal:
+            return (horizontal, vertical)

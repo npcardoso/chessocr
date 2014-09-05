@@ -19,38 +19,49 @@ export them using the FEN notation (https://en.wikipedia.org/wiki/Forsyth–Edwa
 ### Done
 
 #### Board Detection
-  - Read Image from file
+- Read Image from file
 
-    ![Original Image](./images/orig.png)
+![Original Image](./images/orig.png)
 
-  - Convert image to grayscale.
+- Convert image to grayscale.
 
-    ![Grayscale Image](./images/gray.png)
+![Grayscale Image](./images/gray.png)
 
-  - Convert to black and white taking into account average image brightness.
+- Convert to black and white taking into account average image brightness.
 
-    ![BW Image](./images/bw.png)
+![BW Image](./images/bw.png)
 
-  - Find connected areas in BW image using floodfill algorithm.
+- Find contours using cv2.findContours
 
-    ![Floodfill Image](./images/floodfill.png)
+![Contours Image](./images/contours.png)
 
-  - Filter irrelevant areas:
-    - Area either too small or too large.
-    - Ratio height/width not close to 1.
+- Filter irrelevant contours:
+  - Area either too small or too large.
+  - Ratio height/width not close to 1.
 
-#### Area Extraction/Perspective Correction
-  - For each area, find the left and rightmost points (lets call them L and R).
-    - When ties exist, choose the top and bottommost points for left
-      and right, respectively.
-  - Find the farthest points on the left and right side of the lined formed by LR.
+![Contours Image](./images/contours_filtered.png)
 
-    ![Perspective Points](./images/perspective.png)
+#### Board Extraction/Perspective Correction
+- Draw each contour in an individual black buffer.
 
-  - Calculate perspective correction transformation using the 4 discovered points.
-  - Apply the transformation to a copy of the original image and crop it to size.
+![Contours bw Image](./images/contour_individual_bw.png)
 
-    ![Extracted Board](./images/extracted.png)
+- Find lines by using the standard Hough transform. This is done,
+  iteratively, progressively decreasing the accumulator threshold
+  parameter until there exactly 2 horizontal lines and 2 vertical
+  lines (with some degree of freedom).
+  - Lines that are too close to each other are ignored
+
+![Contour Lines](./images/contour_lines_bw.png)
+![Contour Lines](./images/contour_lines_orig.png)
+
+- Calculate the perspective correction transformation using the 4 points of intersection.
+
+![Perspective Points](./images/perspective.png)
+
+- Apply the transformation to a copy of the original image and crop it to size.
+
+![Extracted Board](./images/extracted.png)
 
 ### Doing
 

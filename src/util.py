@@ -1,5 +1,9 @@
 import cv2
 import numpy as np
+import random
+
+def writeDocumentationImage(image, name):
+    cv2.imwrite("images/" + name + ".png", image)
 
 def showImage(image, name="image"):
     print("Showing image: '%s'" % name)
@@ -33,6 +37,14 @@ def drawPerspective(image, perspective, thickness=4):
     drawLine(image, b,d, (255,0,255), thickness)
 
 
+def drawLines(image, lines):
+    for l in lines:
+        l.draw(image)
+
+def drawPoint(image, point, color, thickness=4):
+    cv2.circle(image, point, thickness, color)
+
+
 def extractPerspective(image, perspective, w, h, dest=None):
     if dest is None:
         dest = ((0,0), (w, 0), (w,h), (0, h))
@@ -48,3 +60,6 @@ def ratio(a,b):
     if a == 0 or b == 0:
         return -1
     return min(a,b)/float(max(a,b))
+
+def randomColor(ncol=3):
+    return [random.randint(0,255) for x in range(ncol)]

@@ -22,12 +22,6 @@ gridHeight = 640
 
 
 
-def drawLines(image, lines):
-    for l in lines:
-        l.draw(image)
-
-def drawPoint(image, point):
-    cv2.circle(image, point, 10, (0, 0, 255), -1)
 
 def grid(filename):
     im_gray = cv2.imread(filename, cv2.CV_LOAD_IMAGE_GRAYSCALE)

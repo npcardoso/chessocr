@@ -38,9 +38,9 @@ class Line:
         y = (-ct2 * self.rho + ct1 * line.rho) / d
         return (x, y)
 
-    def draw(self, image, color=(0,0,255)):
+    def draw(self, image, color=(0,0,255), thickness=2):
         p1, p2 = self.getSegment(1000,1000)
-        cv2.line(image, p1, p2, color, 2)
+        cv2.line(image, p1, p2, color, thickness)
 
 
 def partitionLines(lines):

@@ -1,6 +1,6 @@
 import cv2
 import numpy as np
-from util import showImage, drawPerspective, drawBoundaries, drawContour
+from util import showImage, drawPerspective, drawBoundaries, drawContour, drawPoint, writeDocumentationImage
 from line import Line, partitionLines, filterCloseLines
 
 
@@ -10,7 +10,6 @@ def getPerspective(image, points):
     yy, xx, _ = image.shape
     tmp = np.zeros(image.shape[0:2], np.uint8);
     drawContour(tmp, points, (255,), 1)
-    showImage(tmp)
 
     grid = None
     for i in range(houghThreshold):
@@ -47,4 +46,19 @@ def getPerspective(image, points):
                    h1.intersect(v2),
                    h2.intersect(v2),
                    h2.intersect(v1))
+
+    ## Doc ##
+    #tmp = cv2.cvtColor(tmp, cv2.COLOR_GRAY2BGR)
+    #drawContour(tmp, points, (0,0,255), 3)
+    #writeDocumentationImage(tmp, "contour_individual_bw")
+    #tmp_bw = tmp
+    #tmp_orig = image.copy()
+    #for tmp in (tmp_bw, tmp_orig):
+    #    for l in (v1,v2,h1,h2): l.draw(tmp, (0,255,0), 2)
+    #    for p in perspective: drawPoint(tmp, p, (255,0,0), 3)
+    #writeDocumentationImage(tmp_bw, "contour_lines_bw")
+    #writeDocumentationImage(tmp_orig, "contour_lines_orig")
+    ## Doc ##
+
+
     return perspective

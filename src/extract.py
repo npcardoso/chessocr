@@ -136,3 +136,21 @@ def extractGrid(image,
         if len(vertical) >= nvertical and \
            len(horizontal) >= nhorizontal:
             return (horizontal, vertical)
+
+def extractTiles(image, grid, w, h):
+    ret = []
+
+    for x in range(8):
+        v1 = grid[1][x]
+        v2 = grid[1][x+1]
+
+        for y in range(8):
+            h1 = grid[0][y]
+            h2 = grid[0][y+1]
+
+            perspective = getPerspective(image, (h1.intersect(v1),
+                                                 h1.intersect(v2),
+                                                 h2.intersect(v2),
+                                                 h2.intersect(v1)))
+            ret.append(((x,y), extractPerspective(image, perspective, w, h)))
+    return ret

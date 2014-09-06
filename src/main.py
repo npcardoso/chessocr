@@ -17,30 +17,34 @@ extract_height=400
 
 
 def extractPiece(tile, margin=0.05):
+   imgs = [tile]
    w, h, _ = tile.shape
 
    im_gray = cv2.cvtColor(tile, cv2.COLOR_BGR2GRAY)
+   imgs.append(cv2.cvtColor(im_gray, cv2.COLOR_GRAY2BGR))
 
-   im_gray = im_gray[(h*margin):(h*(1-margin)),
-                     (w*margin):(w*(1-margin))]
+#   im_gray = im_gray[(h*margin):(h*(1-margin)),
+#                     (w*margin):(w*(1-margin))]
+#   imgs.append(cv2.cvtColor(im_gray, cv2.COLOR_GRAY2BGR))
 
 
-   showImage(tile)
-   showImage(im_gray)
 #   im_gray = cv2.equalizeHist(im_gray)
    im_gray = cv2.medianBlur(im_gray, 3)
+   imgs.append(cv2.cvtColor(im_gray, cv2.COLOR_GRAY2BGR))
 
-   showImage(im_gray)
 
 
    bright = np.mean(im_gray)
    im_bw = im_gray
    im_bw[np.where(im_gray < bright)] = 0
    im_bw[np.where(im_gray >= bright)] = 255
+   imgs.append(cv2.cvtColor(im_bw, cv2.COLOR_GRAY2BGR))
 
 
    if np.mean(im_bw) < 128:
       im_bw = 255 - im_bw
+
+   imgs.append(cv2.cvtColor(im_bw, cv2.COLOR_GRAY2BGR))
 
 
    #_, im_bw = cv2.threshold(im_gray, 50, 250, cv2.THRESH_BINARY | cv2.THRESH_OTSU)
@@ -59,10 +63,9 @@ def extractPiece(tile, margin=0.05):
       c = np.squeeze(hulls[i], 1)
       drawContour(tmp, c, randomColor(), thickness=1)
 
-#   print largest_contour
-#   drawContour(im_bw, largest_contour, randomColor(), thickness=1)
-#   showImage(im_bw)
-   showImage(tmp)
+   imgs.append(tmp)
+
+   showImage(np.hstack(imgs))
 
 
 
@@ -80,6 +83,7 @@ def main(filename, extractB=False):
    for b in boards:
       print("Extracting Grid")
       grid = (horizontal, vertical) = extractGrid(b, 9, 9)
+      print grid
       print("Extracting Tiles")
       b = Board(extractTiles(b, grid, 100, 100), 8, 8)
       #drawLines(b, horizontal)
@@ -93,6 +97,7 @@ def main(filename, extractB=False):
             t = b.getTile(x,y)
             print "Checking tile ", t.getX(), t.getY()
             extractPiece(t.getImage())
+
 #            cv2.imwrite("extracted_tiles/Board-%d - (%d,%d).png" % (board_id, t.getX(), t.getY()), t.getImage())
 
 

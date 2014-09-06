@@ -96,7 +96,6 @@ def extractBoards(img, w, h):
         ## Doc ##
 
         perspective=getPerspective(img, c)
-
         if perspective is not None:
             b = extractPerspective(img, perspective, w, h)
             boards.append(b)
@@ -160,10 +159,12 @@ def extractTiles(image, grid, w, h):
             h1 = grid[0][y]
             h2 = grid[0][y+1]
 
-            perspective = getPerspective(image, (h1.intersect(v1),
-                                                 h1.intersect(v2),
-                                                 h2.intersect(v2),
-                                                 h2.intersect(v1)))
+            points = (h1.intersect(v1),
+                      h1.intersect(v2),
+                      h2.intersect(v2),
+                      h2.intersect(v1))
+
+            perspective = getPerspective(image, points)
 
             ret.append(((x,y), extractPerspective(image, perspective, w, h)))
     return ret

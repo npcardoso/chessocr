@@ -62,4 +62,4 @@ def ratio(a,b):
     return min(a,b)/float(max(a,b))
 
 def randomColor(ncol=3):
-    return [random.randint(0,255) for x in range(ncol)]
+    return [(random.randint(128, 255) * (random.randint(0,100) % 2)) for x in range(ncol)]

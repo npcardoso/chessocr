@@ -10,9 +10,17 @@ import cv2
 import numpy as np
 
 
+def largestContour(contours):
+    largest = (0, [])
+    for c in contours:
+        contour_area = cv2.contourArea(c)
+        if contour_area > largest[0]:
+            largest = (contour_area, c)
+    return largest[1]
+
 def ignoreContours(img,
                    contours,
-                   hierarchy,
+                   hierarchy=None,
                    min_ratio_bounding=0.6,
                    min_area_percentage=0.01,
                    max_area_percentage=0.40,
@@ -156,5 +164,6 @@ def extractTiles(image, grid, w, h):
                                                  h1.intersect(v2),
                                                  h2.intersect(v2),
                                                  h2.intersect(v1)))
+
             ret.append(((x,y), extractPerspective(image, perspective, w, h)))
     return ret

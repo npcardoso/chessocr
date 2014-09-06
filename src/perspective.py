@@ -5,6 +5,7 @@ from line import Line, partitionLines, filterCloseLines
 
 
 houghThreshold = 150
+hough_threshold_step = 20
 
 def getPerspective(image, points):
     yy, xx, _ = image.shape
@@ -12,8 +13,8 @@ def getPerspective(image, points):
     drawContour(tmp, points, (255,), 1)
 
     grid = None
-    for i in range(houghThreshold):
-        lines = cv2.HoughLines(tmp, 1, np.pi / 180, houghThreshold-i)
+    for i in range(houghThreshold/hough_threshold_step):
+        lines = cv2.HoughLines(tmp, 1, np.pi / 180, houghThreshold-(i * hough_threshold_step))
         if lines is None:
             continue
         lines = [Line(l[0], l[1]) for l in lines[0]]

@@ -20,12 +20,16 @@ def ignoreContours(img,
     ret = []
     i = -1
 
+    if hierarchy is not None:
+        while len(hierarchy.shape) > 2:
+            hierarchy = np.squeeze(hierarchy, 0)
     img_area = img.shape[0] * img.shape[1]
 
     for c in contours:
         i += 1
 
-        if not hierarchy[i][2] == -1:
+        if hierarchy is not None and \
+           not hierarchy[i][2] == -1:
             continue
 
         _,_,w,h = tmp = cv2.boundingRect(c)
@@ -59,7 +63,6 @@ def extractBoards(img, w, h):
 
 
     contours,hierarchy = cv2.findContours(im_bw,  cv2.RETR_CCOMP, cv2.CHAIN_APPROX_TC89_KCOS)
-    hierarchy = np.squeeze(hierarchy)
 
 
     ## Doc ##
@@ -111,6 +114,7 @@ def extractGrid(image,
                 threshold1 = 50,
                 threshold2 = 150,
                 apertureSize = 3,
+                hough_threshold_step=20,
                 hough_threshold_min=50,
                 hough_threshold_max=150):
 
@@ -123,8 +127,8 @@ def extractGrid(image,
     thresh, im_bw = cv2.threshold(im_gray, 128, 255, cv2.THRESH_BINARY | cv2.THRESH_OTSU)
     im_canny = cv2.Canny(im_bw, threshold1, threshold2, apertureSize=apertureSize)
 
-    for i in range(hough_threshold_max - hough_threshold_min + 1):
-        lines = cv2.HoughLines(im_canny, 1, np.pi / 180, hough_threshold_max - i)
+    for i in range((hough_threshold_max - hough_threshold_min + 1) / hough_threshold_step):
+        lines = cv2.HoughLines(im_canny, 1, np.pi / 180, hough_threshold_max - (hough_threshold_step * i))
         if lines is None:
             continue
 

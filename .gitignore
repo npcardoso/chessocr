@@ -1,5 +1,6 @@
 # Byte-compiled / optimized / DLL files
 __pycache__/
+extracted_tiles
 *.py[cod]
 
 # C extensions
@@ -51,4 +52,3 @@ coverage.xml
 
 # Sphinx documentation
 docs/_build/
-

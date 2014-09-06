@@ -4,7 +4,7 @@ sys.path.append('/usr/local/lib/python2.7/site-packages/')
 
 from board import Board
 from extract import extractBoards, extractGrid, extractTiles, ignoreContours
-from util import showImage, drawPerspective, drawBoundaries, drawLines, drawPoint, drawContour, extractPerspective
+from util import showImage, drawPerspective, drawBoundaries, drawLines, drawPoint, drawContour, extractPerspective, randomColor
 import random
 import cv2
 import numpy as np
@@ -26,7 +26,7 @@ def extractPiece(tile):
       c = contours[i]
       c = np.squeeze(c,1)
 
-      drawContour(tile, c, (0,0,255))
+      drawContour(tile, c, randomColor(), thickness=1)
    if len(c):
       showImage(tile)
 

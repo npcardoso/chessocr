@@ -1,6 +1,6 @@
 from line import Line, partitionLines, filterCloseLines
 from perspective import getPerspective
-from util import ratio, extractPerspective
+from util import ratio
 from util import showImage, drawPerspective, drawBoundaries, drawContour, writeDocumentationImage
 from util import randomColor
 
@@ -11,6 +11,11 @@ import numpy as np
 
 
 def largestContour(contours):
+    """Finds the contour with the largest area in the list.
+    :param contours: list of contours
+    :returns: the largest countour
+    """
+
     largest = (0, [])
     for c in contours:
         contour_area = cv2.contourArea(c)
@@ -23,8 +28,18 @@ def ignoreContours(img,
                    hierarchy=None,
                    min_ratio_bounding=0.6,
                    min_area_percentage=0.01,
-                   max_area_percentage=0.40,
-                   min_ratio_rect=0.5):
+                   max_area_percentage=0.40):
+    """Filters a contour list based on some rules. If hierarchy != None,
+    only top-level contours are considered.
+    :param img: source image
+    :param contours: list of contours
+    :param hierarchy: contour hierarchy
+    :param min_ratio_bounding: minimum contour area vs. bounding box area ratio
+    :param min_area_percentage: minimum contour vs. image area percentage
+    :param max_area_percentage: maximum contour vs. image area percentage
+    :returns: a list with the unfiltered countour ids
+    """
+
     ret = []
     i = -1
 
@@ -58,7 +73,14 @@ def ignoreContours(img,
 
 
 def extractBoards(img, w, h):
+    """Extracts all boards from an image. This function applies perspective correction.
+    :param img: source image
+    :param w: output width
+    :param h: output height
+    :returns: a list the extracted board images
+    """
     im_gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+
     ## Doc ##
     #writeDocumentationImage(im_gray, "gray")
     ## Doc ##
@@ -69,9 +91,7 @@ def extractBoards(img, w, h):
     #writeDocumentationImage(im_bw, "bw")
     ## Doc ##
 
-
     contours,hierarchy = cv2.findContours(im_bw,  cv2.RETR_CCOMP, cv2.CHAIN_APPROX_TC89_KCOS)
-
 
     ## Doc ##
     #doc_im_contour = cv2.cvtColor(im_gray, cv2.COLOR_GRAY2BGR)
@@ -82,7 +102,6 @@ def extractBoards(img, w, h):
     #doc_im_perspective = cv2.cvtColor(im_gray, cv2.COLOR_GRAY2BGR)
     #doc_im_contour = cv2.cvtColor(im_gray, cv2.COLOR_GRAY2BGR)
     ## Doc ##
-
 
     contour_ids = ignoreContours(im_bw, contours, hierarchy)
     boards = []
@@ -95,7 +114,7 @@ def extractBoards(img, w, h):
         #drawContour(doc_im_contour, c, color)
         ## Doc ##
 
-        perspective=getPerspective(img, c)
+        perspective = getPerspective(img, c)
         if perspective is not None:
             b = extractPerspective(img, perspective, w, h)
             boards.append(b)
@@ -114,8 +133,7 @@ def extractBoards(img, w, h):
 
 
 
-
-def extractGrid(image,
+def extractGrid(img,
                 nvertical,
                 nhorizontal,
                 threshold1 = 50,
@@ -124,13 +142,20 @@ def extractGrid(image,
                 hough_threshold_step=20,
                 hough_threshold_min=50,
                 hough_threshold_max=150):
+    """Finds the grid lines in a board image.
+    :param img: board image
+    :param nvertical: number of vertical lines
+    :param nhorizontal: number of horizontal lines
+    :returns: a pair (horizontal, vertical). Both elements are lists with the lines' positions.
+    """
 
-    w, h, _ = image.shape
+
+    w, h, _ = img.shape
     close_threshold_v = (w / nvertical) / 4
     close_threshold_h = (h / nhorizontal) / 4
 
 
-    im_gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+    im_gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
     thresh, im_bw = cv2.threshold(im_gray, 128, 255, cv2.THRESH_BINARY | cv2.THRESH_OTSU)
     im_canny = cv2.Canny(im_bw, threshold1, threshold2, apertureSize=apertureSize)
 
@@ -148,7 +173,8 @@ def extractGrid(image,
            len(horizontal) >= nhorizontal:
             return (horizontal, vertical)
 
-def extractTiles(image, grid, w, h):
+
+def extractTiles(img, grid, w, h):
     ret = []
 
     for x in range(8):
@@ -159,12 +185,29 @@ def extractTiles(image, grid, w, h):
             h1 = grid[0][y]
             h2 = grid[0][y+1]
 
-            points = (h1.intersect(v1),
-                      h1.intersect(v2),
-                      h2.intersect(v2),
-                      h2.intersect(v1))
+            perspective = (h1.intersect(v1),
+                           h1.intersect(v2),
+                           h2.intersect(v2),
+                           h2.intersect(v1))
 
-            perspective = getPerspective(image, points)
+            tile = extractPerspective(img, perspective, w, h)
 
-            ret.append(((x,y), extractPerspective(image, perspective, w, h)))
+            ret.append(((x,y), tile))
+
+
     return ret
+
+
+def extractPerspective(image, perspective, w, h, dest=None):
+    if dest is None:
+        dest = ((0,0), (w, 0), (w,h), (0, h))
+
+    if perspective is None:
+        im_w, im_h,_ = image.shape
+        perspective = ((0,0), (im_w, 0), (im_w,im_h), (0, im_h))
+
+    perspective = np.array(perspective ,np.float32)
+    dest = np.array(dest ,np.float32)
+
+    coeffs = cv2.getPerspectiveTransform(perspective, dest)
+    return cv2.warpPerspective(image, coeffs, (w, h))

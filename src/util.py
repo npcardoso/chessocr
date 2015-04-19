@@ -45,20 +45,6 @@ def drawPoint(image, point, color, thickness=4):
     cv2.circle(image, tuple([int(i) for i in point]), thickness, color)
 
 
-def extractPerspective(image, perspective, w, h, dest=None):
-    if dest is None:
-        dest = ((0,0), (w, 0), (w,h), (0, h))
-    if perspective is None:
-        im_w, im_h,_ = image.shape
-        perspective = ((0,0), (im_w, 0), (im_w,im_h), (0, im_h))
-
-    perspective = np.array(perspective ,np.float32)
-    dest = np.array(dest ,np.float32)
-
-    coeffs = cv2.getPerspectiveTransform(perspective, dest)
-    return cv2.warpPerspective(image, coeffs, (w, h))
-
-
 def ratio(a,b):
     if a == 0 or b == 0:
         return -1

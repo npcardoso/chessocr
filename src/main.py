@@ -4,12 +4,14 @@ sys.path.append('/usr/local/lib/python2.7/site-packages/')
 
 from board import Board
 from extract import extractBoards, extractGrid, extractTiles, ignoreContours, largestContour
-from util import showImage, drawPerspective, drawBoundaries, drawLines, drawPoint, drawContour, extractPerspective, randomColor
+from util import showImage, drawPerspective, drawBoundaries, drawLines, drawPoint, drawContour, randomColor
+from line import Line
+
 import random
 import cv2
 import numpy as np
+import argparse
 
-from line import Line
 
 
 extract_width=400
@@ -65,48 +67,88 @@ def extractPiece(tile, margin=0.05):
 
    imgs.append(tmp)
 
-   showImage(np.hstack(imgs))
+
+   return imgs
 
 
 
 
 
-def main(filename, extractB=False):
-   image = cv2.imread(filename)
+def main_dev(board, args):
+   pass
 
-   if extractB:
-      print("Extracting Boards")
-      boards = extractBoards(image, extract_width, extract_height)
-   else:
-      boards = [image]
+def main_train(board, args):
+   pass
 
-   for b in boards:
-      print("Extracting Grid")
-      grid = (horizontal, vertical) = extractGrid(b, 9, 9)
-      print grid
-      print("Extracting Tiles")
-      b = Board(extractTiles(b, grid, 100, 100), 8, 8)
-      #drawLines(b, horizontal)
-      #drawLines(b, vertical, color=(255,0,0))
-      #for h in horizontal:
-      #   for v in vertical:
-      #      drawPoint(b, h.intersect(v), (0,255,255))
-      board_id = int(random.randint(0, 100000))
+def main_show_tiles(board, args):
+   imgs = []
+   for y in range(8):
+      imgs_row = []
       for x in range(8):
-         for y in (0,1, 6,7):
-            t = b.getTile(x,y)
-            print "Checking tile ", t.getX(), t.getY()
-            extractPiece(t.getImage())
+         t = board.getTile(x,y)
+         tmp = extractPiece(t.getImage())
+         imgs_row.append(np.vstack(tmp))
+      imgs.append(np.hstack(imgs_row))
 
-#            cv2.imwrite("extracted_tiles/Board-%d - (%d,%d).png" % (board_id, t.getX(), t.getY()), t.getImage())
-
-
+   showImage(np.vstack(imgs))
 
 
 
-if len(sys.argv) < 2 or len(sys.argv) > 3:
-   print("Usage: " + sys.argv[0] + " <filename> [<extractBoards?>]")
-elif len(sys.argv) == 2:
-   main(sys.argv[1])
-elif len(sys.argv) == 3:
-   main(sys.argv[1], bool(sys.argv[2]))
+
+
+
+def main(argv):
+   actions = {}
+   actions["train"] = main_train
+   actions["show_tiles"] = main_show_tiles
+   actions["dev"] = main_dev
+
+
+   parser = argparse.ArgumentParser(description='A chess OCR application.')
+   parser.add_argument('filenames', metavar='filename', type=str, nargs='+',
+                       help='The files to process.')
+
+   parser.add_argument('-e', dest='extract_boards', action='store_const',
+                       const=True, default=False,
+                       help='extract boards from images (default: use image as-is)')
+
+   parser.add_argument('-a', dest='action', default="show_tiles",
+                       choices=["train", "show_tiles", "dev"],
+                       help='action to perform (default: show_tiles)')
+
+   args = parser.parse_args()
+
+   action = actions[args.action]
+
+
+
+   for filename in args.filenames:
+      image = cv2.imread(filename)
+      print("---- %s ----" % filename)
+
+      if args.extract_boards:
+         print("Extracting Boards")
+         boards = extractBoards(image, extract_width, extract_height)
+      else:
+         boards = [image]
+
+      for b in boards:
+         print("Extracting Grid")
+         grid = extractGrid(b, 9, 9)
+
+         print(grid)
+         if grid is None:
+            print("Could not find Grid")
+            continue
+
+         print("Extracting Tiles")
+         tiles = extractTiles(b, grid, 100, 100)
+
+         b = Board(tiles, 8, 8)
+
+         print("Running action")
+         action(b, args)
+
+
+
+main(sys.argv)
